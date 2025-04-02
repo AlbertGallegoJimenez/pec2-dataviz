@@ -1,6 +1,33 @@
-# PEC 2 - VISUALIZACIÓN DE DATOS 📊📈
+# PEC2 - VISUALIZACIÓN DE DATOS 📊📈
 
+<div style="width: 100%; clear: both;">
+<div style="float: left; width: 50%;">
+<img src="http://www.uoc.edu/portal/_resources/common/imatges/marca_UOC/UOC_Masterbrand.jpg" align="left">
+</div>
+<div style="float: right; width: 50%;">
+<p style="margin: 0; padding-top: 22px; text-align:right;">M2.859 · Visualización de datos · PEC2</p>
+<p style="margin: 0; text-align:right;">2024-2 · Máster universitario en Ciencia de datos (Data science)</p>
+<p style="margin: 0; text-align:right; padding-button: 100px;">Estudios de Informática, Multimedia y Telecomunicación</p>
+</div>
+</div>
+<div style="width:100%;">&nbsp;</div>
 
+## Contenido
+
+- [1. Pyramid Chart](#1-pyramid-chart)
+  - [Explicación de la técnica](#explicación-de-la-técnica)
+  - [Datos y herramientas usadas para la propuesta](#datos-y-herramientas-usadas-para-la-propuesta)
+  - [Propuesta de la técnica](#propuesta-de-la-técnica)
+- [2. Stream Graph](#2-stream-graph)
+  - [Explicación de la técnica](#explicación-de-la-técnica-1)
+  - [Datos y herramientas usadas para la propuesta](#datos-y-herramientas-usadas-para-la-propuesta-1)
+  - [Propuesta de la técnica](#propuesta-de-la-técnica-1)
+- [3. Ridgeline Chart](#3-ridgeline-chart)
+  - [Explicación de la técnica](#explicación-de-la-técnica-2)
+  - [Datos y herramientas usadas para la propuesta](#datos-y-herramientas-usadas-para-la-propuesta-2)
+  - [Propuesta de la técnica](#propuesta-de-la-técnica-2)
+
+-----------
 
 ## 1. Pyramid Chart
 
@@ -53,8 +80,7 @@ Herramientas usadas:
 ### Propuesta de la técnica
 
 <div align="center">
-      <img src="pyramid_chart/plots/pop_pyramid_evolution.gif" width="150%">
-      Fig 1. Map of the earthquake dataset with the tsunami label (the size of the points indicates the magnitude of each event).
+      <img src="pyramid_chart/plots/pop_pyramid_evolution.gif" width="100%">
 </div>
 
 ## 2. Stream Graph
@@ -102,7 +128,15 @@ Herramientas usadas:
 
 ### Datos y herramientas usadas para la propuesta
 
+Los datos utilizados en esta visualización provienen del repositorio de Kaggle de [Kaggle - Most Popular Programming Languages since 2004](https://www.kaggle.com/datasets/muhammadkhalid/most-popular-programming-languages-since-2004).
+
+Herramientas usadas: 
+<p align="left">
+<!--JavaScript---><a target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/9/99/Unofficial_JavaScript_logo_2.svg" alt="javascript" width="40" height="40"/></a>
+
 ### Propuesta de la técnica
+
+Enlace a la visualización: https://albertgallegojimenez.github.io/pec2-dataviz/
 
 ## 3. Ridgeline Chart
 
@@ -146,4 +180,15 @@ Herramientas usadas:
 
 ### Datos y herramientas usadas para la propuesta
 
+Los datos utilizados en esta visualización provienen de la página de [Open Meteo](https://open-meteo.com/).
+
+Herramientas usadas: 
+<p align="left">
+<!--R---><a target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/R_logo.svg" alt="R" width="40" height="40"/></a>
+<!--Canva---><a target="_blank" rel="noreferrer"> <img src="https://img.icons8.com/?size=100&id=EZQdGLNeo7JI&format=png&color=000000" alt="Canva" width="40" width="40" /></a>
+
 ### Propuesta de la técnica
+
+<div align="center">
+      <img src="ridgeline_chart/plots/temp_precip_spain_2024.png" width="100%">
+</div>
