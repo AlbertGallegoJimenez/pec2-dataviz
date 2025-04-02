@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Programming Languages Streamgraph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Add reference to data file -->
+    <script src="data/programming_data.js"></script>
+    <!-- Add reference to Montserrat font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        h2 {
+            text-align: center;
+            font-weight: normal;
+            font-style: italic;
+            font-size: 18px;
+            margin-top: 0;
+            color: #555;
+        }
+        #my_dataviz {
+            width: 900px;
+            margin: 0 auto;
+        }
+        .area {
+            opacity: 0.8;
+        }
+        .area:hover {
+            opacity: 1;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            pointer-events: none;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .tooltip img {
+            height: 30px;
+            margin-bottom: 5px;
+        }
+        .tooltip .date {
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .tooltip .value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .language-label {
+            display: none; /* Hide labels within areas */
+        }
+        .legend-item {
+            cursor: pointer;
+        }
+        .legend-item:hover text {
+            font-weight: bold;
+        }
+        .source-info {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .axis-title {
+            font-size: 14px;
+            font-weight: 500;
+            fill: #333; /* Ensure visible color */
+        }
+    </style>
+</head>
+<body>
+    <h1>Popularidad de Lenguajes de Programación</h1>
+    <h2>Evolución del índice PYPL de los principales lenguajes de programación</h2>
+    <div id="my_dataviz"></div>
+    <div class="source-info">Fuente de datos: <a href="https://www.kaggle.com/datasets/muhammadkhalid/most-popular-programming-languages-since-2004" target="_blank">Kaggle - Most Popular Programming Languages since 2004</a></div>
+
+    <script>
+        // Basic chart configuration
+        const margin = {top: 60, right: 230, bottom: 70, left: 70},
+            width = 900 - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
+
+        // Create SVG element with larger dimensions
+        const svg = d3.select("#my_dataviz")
+          .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom + 20) // Add 20px extra height
+          .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create tooltip
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "tooltip");
+
+        // Use data from JS file instead of loading CSV
+        try {
+            // Check if data is available
+            if (!programmingData || programmingData.length === 0) {
+                throw new Error("No data found");
+            }
+            console.log("Loaded data:", programmingData);
+            const data = [...programmingData]; // Clone data to avoid modifying original
+            
+            // Process data
+            data.forEach(d => {
+                d.date = d3.timeParse("%Y-%m")(d.Date);
+                // No need to convert to number, as data is already numeric
+            });
+            console.log("Loaded data:", data);
+            if (data.length === 0) {
+                throw new Error("No data loaded from CSV");
+            }
+            
+            // Sort by date
+            data.sort((a, b) => a.date - b.date);
+            
+            // Define the top languages to display
+            const topLanguages = ["JavaScript", "Python", "Java", "PHP", "C/C++", "C#"];
+
+            // Create custom color scale
+            const customColors = {
+                "JavaScript": "#F7DF1E", // JS yellow
+                "Python": "#3776AB",     // Python blue
+                "Java": "#E92A30",       // Java red
+                "PHP": "#777BB4",        // PHP purple
+                "C/C++": "#00599C",      // C/C++ blue
+                "C#": "#68217A"          // C# purple
+            };
+
+            const color = d3.scaleOrdinal()
+                .domain(topLanguages)
+                .range(topLanguages.map(lang => customColors[lang]));
+
+            // Create scales - for streamgraph we use the actual values (not percentages)
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, d => d.date))
+                .range([0, width]);
+
+            // Stack generator for streamgraph
+            const stackGenerator = d3.stack()
+                .keys(topLanguages)
+                .order(d3.stackOrderNone)
+                .offset(d3.stackOffsetSilhouette); // Silhouette offset centers the stream
+
+            // Generate stacked data
+            const stackedData = stackGenerator(data);
+            console.log("Stacked data:", stackedData);
+
+            // Find min and max values from stacked data for y scale
+            let yMin = Infinity;
+            let yMax = -Infinity;
+            
+            stackedData.forEach(layer => {
+                layer.forEach(point => {
+                    yMin = Math.min(yMin, point[0]);
+                    yMax = Math.max(yMax, point[1]);
+                });
+            });
+            
+            // Add a bit of padding to y scale
+            const yPadding = (yMax - yMin) * 0.05;
+            
+            // Y scale for streamgraph
+            const y = d3.scaleLinear()
+                .domain([yMin - yPadding, yMax + yPadding])
+                .range([height, 0]);
+
+            // Create area generator for each language
+            const area = d3.area()
+                .x(d => x(d.data.date))
+                .y0(d => y(d[0]))
+                .y1(d => y(d[1]))
+                .curve(d3.curveBasis);  // Smooth the curve
+
+            // Draw each area
+            svg.selectAll("mylayers")
+                .data(stackedData)
+                .join("path")
+                .attr("class", d => `area area-${d.key.replace(/[^a-zA-Z0-9]/g, "_")}`)
+                .style("fill", d => color(d.key))
+                .style("stroke", "#fff")  // Add white border to separate areas
+                .style("stroke-width", 0.3)
+                .attr("d", area)
+                .on("mousemove", function(event, d) {  // Change mouseover to mousemove for continuous update
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    
+                    // Find value closest to mouse position
+                    const mouseX = x.invert(d3.pointer(event, this)[0]);
+                    const bisect = d3.bisector(d => d.date).left;
+                    const index = bisect(data, mouseX);
+                    const selectedData = index < data.length ? data[index] : data[data.length - 1];
+                    
+                    // Format date for tooltip
+                    const formatDate = d3.timeFormat("%b %Y");
+                    const dateString = formatDate(selectedData.date);
+                    
+                    // Get the value for the hovered area
+                    const value = selectedData[d.key] ? 
+                        selectedData[d.key].toFixed(1) : 
+                        selectedData[d.key].toFixed(1);
+                    const logoPath = logos[d.key] || "";
+                    
+                    tooltip.html("")
+                        .style("opacity", .9)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                    
+                    // Add logo to tooltip
+                    if (logoPath) {
+                        tooltip.append("img")
+                            .attr("src", logoPath)
+                            .attr("alt", d.key);
+                    }
+                    
+                    // Add date
+                    tooltip.append("span")
+                        .attr("class", "date")
+                        .text(dateString);
+                    
+                    // Add percentage value in bold - for streamgraph, show actual value
+                    tooltip.append("span")
+                        .attr("class", "value")
+                        .text(`${value}%`);
+                        
+                    // Highlight current area
+                    d3.selectAll(".area").style("opacity", 0.4);
+                    d3.select(this).style("opacity", 1);
+                })
+                .on("mouseout", function() {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                    
+                    // Restore opacity
+                    d3.selectAll(".area").style("opacity", 0.8);
+                });
+
+            // Add X axis
+            svg.append("g")
+                .attr("transform", `translate(0,${height/2})`) // Position at vertical center for streamgraph
+                .call(d3.axisBottom(x).ticks(10).tickFormat(d3.timeFormat("%Y")))
+                .selectAll("text")
+                    .style("text-anchor", "middle");
+
+            // For streamgraph, we typically don't show Y axis values
+            // But we can add a center line
+            svg.append("path")
+                .attr("d", `M0,${height/2} L${width},${height/2}`)
+                .attr("stroke", "#000")
+                .attr("stroke-width", 0.5)
+                .attr("stroke-dasharray", "3,3")
+                .attr("opacity", 0.5);
+
+            // Associate logos with languages
+            const logos = {
+                "JavaScript": "data/logos/javascript.png",
+                "Python": "data/logos/python.png",
+                "Java": "data/logos/java.png",
+                "PHP": "data/logos/php.png",
+                "C/C++": "data/logos/cpp.png",
+                "C#": "data/logos/csharp.png"
+            };
+
+            // Add improved legend
+            const legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", `translate(${width + 20}, 0)`);
+
+            topLanguages.slice().reverse().forEach((key, i) => {
+                const lg = legend.append("g")
+                    .attr("class", "legend-item")
+                    .attr("transform", `translate(0, ${i * 25})`) // Greater separation
+                    .on("mouseover", function() {
+                        // Highlight corresponding area
+                        d3.selectAll(".area").style("opacity", 0.2);
+                        d3.select(`.area-${key.replace(/[^a-zA-Z0-9]/g, "_")}`).style("opacity", 1);
+                    })
+                    .on("mouseout", function() {
+                        // Restore opacity
+                        d3.selectAll(".area").style("opacity", 0.8);
+                    });
+                
+                lg.append("rect")
+                    .attr("width", 18)
+                    .attr("height", 18)
+                    .attr("fill", color(key));
+                
+                // Also show logo in the legend
+                lg.append("image")
+                    .attr("x", 25)
+                    .attr("y", -5)
+                    .attr("width", 22)
+                    .attr("height", 22)
+                    .attr("xlink:href", logos[key]);
+                
+                lg.append("text")
+                    .attr("x", 52) // Adjusted to make room for logo
+                    .attr("y", 9)
+                    .attr("dy", ".35em")
+                    .text(key);
+            });
+
+        } catch (error) {
+            console.error("Error processing data:", error);
+            d3.select("#my_dataviz")
+                .append("div")
+                .style("color", "red")
+                .style("font-weight", "bold")
+                .style("margin-top", "20px")
+                .text("Error processing data: " + error.message);
+        }
+
+        // Update font selector for all text labels
+        svg.selectAll("text")
+            .style("font-family", "'Montserrat', sans-serif");
+            
+        // Also update tooltip text to use Montserrat
+        tooltip
+            .style("font-family", "'Montserrat', sans-serif");
+    </script>
+</body>
+</html>
